@@ -645,6 +645,7 @@ function saveSettings() {
    11. TASKS
 ───────────────────────────────────── */
 let tasks = [];
+let activeParentId = null;
 
 function loadTasks() {
   try {
@@ -678,9 +679,9 @@ function renderTasks() {
     empty.style.display = 'flex';
   } else {
     empty.style.display = 'none';
-    tasks.forEach((t, i) => {
+    const renderTaskItem = (t, i, isSub = false, parentId = null) => {
       const li = document.createElement('li');
-      li.className = `task-item ${t.done ? 'done' : ''}`;
+      li.className = `task-item ${t.done ? 'done' : ''} ${isSub ? 'sub-task-item' : ''}`;
 
       let timeText = '';
       if (t.start || t.end) {
@@ -688,6 +689,10 @@ function renderTasks() {
         let labelEnd = t.end ? formatTime(t.end) : '';
         timeText = `<div class="task-time-disp">${labelStart} ${labelEnd ? '- ' + labelEnd : ''}</div>`;
       }
+
+      let subTaskBtn = !isSub ? `<button class="task-add-sub" title="Add Sub-task" data-id="${t.id}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>` : '';
 
       li.innerHTML = `
         <button class="task-check" title="Toggle status">
@@ -697,6 +702,7 @@ function renderTasks() {
           <div class="task-text">${t.text}</div>
           ${timeText}
         </div>
+        ${subTaskBtn}
         <button class="task-del" title="Delete">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
@@ -704,17 +710,57 @@ function renderTasks() {
 
       li.querySelector('.task-check').addEventListener('click', () => {
         t.done = !t.done;
+        if (isSub && parentId) {
+          const p = tasks.find(pt => pt.id === parentId);
+          if (p && p.subtasks && p.subtasks.every(st => st.done)) p.done = true;
+          else if (p && !t.done) p.done = false;
+        }
+        if (!isSub && t.subtasks && t.subtasks.length > 0) {
+          t.subtasks.forEach(st => st.done = t.done);
+        }
         saveTasks();
         renderTasks();
       });
 
       li.querySelector('.task-del').addEventListener('click', () => {
-        tasks.splice(i, 1);
+        if (isSub && parentId) {
+          const p = tasks.find(pt => pt.id === parentId);
+          if (p) p.subtasks.splice(i, 1);
+        } else {
+          tasks.splice(i, 1);
+        }
         saveTasks();
         renderTasks();
       });
 
-      list.appendChild(li);
+      if (!isSub) {
+        const addSubBtn = li.querySelector('.task-add-sub');
+        if (addSubBtn) {
+          addSubBtn.addEventListener('click', () => {
+             activeParentId = t.id;
+             $('subTaskBanner').style.display = 'flex';
+             $('subTaskLabel').textContent = S.menuLang === 'ar' ? 'إضافة فرعية لـ: ' + t.text : 'Adding sub-task to: ' + t.text;
+             $('taskInput').focus();
+          });
+        }
+      }
+      return li;
+    };
+
+    tasks.forEach((t, i) => {
+      if (t.subtasks && t.subtasks.length > 0) {
+        const allDone = t.subtasks.every(st => st.done);
+        if (allDone !== t.done && !t.done) {
+          t.done = allDone;
+          saveTasks();
+        }
+      }
+      list.appendChild(renderTaskItem(t, i, false));
+      if (t.subtasks && t.subtasks.length > 0) {
+        t.subtasks.forEach((st, j) => {
+          list.appendChild(renderTaskItem(st, j, true, t.id));
+        });
+      }
     });
   }
 
@@ -761,7 +807,7 @@ function addTask() {
     let startMs = getTargetTimeMs(startStr, now, false, null);
     let endMs = getTargetTimeMs(endStr, now, true, startMs || now.getTime());
 
-    tasks.push({
+    const newTask = {
       id: Date.now().toString(),
       text: val,
       done: false,
@@ -770,8 +816,21 @@ function addTask() {
       startMs: startMs,
       endMs: endMs,
       startNotified: false,
-      endNotified: false
-    });
+      endNotified: false,
+      subtasks: []
+    };
+
+    if (activeParentId) {
+      const p = tasks.find(pt => pt.id === activeParentId);
+      if (p) {
+        p.subtasks = p.subtasks || [];
+        p.subtasks.push(newTask);
+      }
+      activeParentId = null;
+      if ($('subTaskBanner')) $('subTaskBanner').style.display = 'none';
+    } else {
+      tasks.push(newTask);
+    }
     inp.value = '';
     if (startInp) startInp.value = '';
     if (endInp) endInp.value = '';
@@ -787,20 +846,23 @@ function checkTaskNotifications() {
   const now = Date.now();
   let changed = false;
 
-  tasks.forEach(t => {
+  const check = (t) => {
     if (t.done) return;
-
     if (t.startMs && !t.startNotified && now >= t.startMs) {
       showNotification('Task Started', t.text);
       t.startNotified = true;
       changed = true;
     }
-
     if (t.endMs && !t.endNotified && now >= t.endMs) {
       showNotification('Task Ended', t.text + ' time is up!');
       t.endNotified = true;
       changed = true;
     }
+  };
+
+  tasks.forEach(t => {
+    check(t);
+    if (t.subtasks) t.subtasks.forEach(st => check(st));
   });
 
   if (changed) saveTasks();
@@ -833,6 +895,9 @@ setInterval(checkTaskNotifications, 5000);
 
 function clearDoneTasks() {
   tasks = tasks.filter(t => !t.done);
+  tasks.forEach(t => {
+    if (t.subtasks) t.subtasks = t.subtasks.filter(st => !st.done);
+  });
   saveTasks();
   renderTasks();
 }
@@ -1329,6 +1394,35 @@ document.addEventListener('DOMContentLoaded', () => {
   if ($('taskInput')) $('taskInput').addEventListener('keydown', handleTaskEnter);
   if ($('taskStart')) $('taskStart').addEventListener('keydown', handleTaskEnter);
   if ($('taskEnd')) $('taskEnd').addEventListener('keydown', handleTaskEnter);
+
+  if ($('btnCancelSubTask')) $('btnCancelSubTask').addEventListener('click', () => {
+    activeParentId = null;
+    $('subTaskBanner').style.display = 'none';
+    $('taskInput').value = '';
+  });
+
+  document.querySelectorAll('.btn-qt').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const startInp = $('taskStart');
+      const endInp = $('taskEnd');
+      if (!startInp || !endInp) return;
+      
+      let baseDate = new Date();
+      if (endInp.value) {
+        const [h,m] = endInp.value.split(':').map(Number);
+        baseDate.setHours(h, m, 0, 0);
+      } else if (startInp.value) {
+        const [h,m] = startInp.value.split(':').map(Number);
+        baseDate.setHours(h, m, 0, 0);
+      } else {
+        startInp.value = pad(baseDate.getHours()) + ':' + pad(baseDate.getMinutes());
+      }
+      
+      const addMins = parseInt(btn.dataset.add);
+      baseDate.setMinutes(baseDate.getMinutes() + addMins);
+      endInp.value = pad(baseDate.getHours()) + ':' + pad(baseDate.getMinutes());
+    });
+  });
 
   if ($('btnTaskNow')) $('btnTaskNow').addEventListener('click', () => {
     const d = new Date();
