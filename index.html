@@ -134,6 +134,12 @@
     <div class="tp-progress-bg"><div class="tp-progress-fill" id="tpProgress"></div></div>
 
     <!-- Add task input -->
+    <div class="sub-task-banner" id="subTaskBanner" style="display:none;">
+      <span id="subTaskLabel">Adding sub-task...</span>
+      <button id="btnCancelSubTask" title="Cancel">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
     <div class="task-input-row">
       <input type="text" id="taskInput" class="task-input" placeholder="Add a task…" data-i18n-placeholder="addTask" maxlength="80" autocomplete="off" />
       <button class="task-add-btn" id="btnAddTask" title="Add task">
@@ -146,8 +152,13 @@
     <div class="task-time-row">
       <button class="btn-now" id="btnTaskNow" data-i18n="now" title="Set to Current Time">Now</button>
       <input type="time" id="taskStart" class="task-time-input" title="Start Time (Optional)" />
-      <span class="task-time-sep">-</span>
+      <div class="task-time-sep">-</div>
       <input type="time" id="taskEnd" class="task-time-input" title="End Time (Optional)" />
+    </div>
+    <div class="task-quick-time">
+      <button class="btn-qt" data-add="15">+15m</button>
+      <button class="btn-qt" data-add="30">+30m</button>
+      <button class="btn-qt" data-add="60">+1h</button>
     </div>
 
     <!-- Task list -->
