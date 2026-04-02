@@ -1624,3 +1624,81 @@ body.rtl .sc-widget-stack {
   padding-right: 10px !important;
   width: auto !important;
 }
+
+/* ══════════════════════════════════
+   TRACK LIKE BUTTON
+══════════════════════════════════ */
+.track-like-btn {
+  width: 26px; height: 26px;
+  display: flex; align-items: center; justify-content: center;
+  border: none; background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  border-radius: 50%;
+  flex-shrink: 0;
+  transition: color .2s, background .2s, transform .15s;
+  opacity: 0;
+}
+.track-item:hover .track-like-btn {
+  opacity: 1;
+}
+.track-like-btn svg { width: 13px; height: 13px; }
+.track-like-btn:hover {
+  color: #f57020;
+  background: rgba(245,112,32,.12);
+  transform: scale(1.15);
+}
+.track-like-btn:active { transform: scale(.9); }
+.track-like-btn.liked {
+  color: #f57020;
+  opacity: 1;
+}
+.track-like-btn.liked svg { fill: #f57020; }
+.track-like-btn.liked:hover {
+  color: #ff4444;
+  background: rgba(255,68,68,.12);
+}
+.track-like-btn.liked:hover svg { fill: #ff4444; }
+
+/* ══════════════════════════════════
+   FULLSCREEN ISLAND MODE
+   (Dynamic Island overlay while staying fullscreen)
+══════════════════════════════════ */
+body.fullscreen-island .standby-container,
+body.fullscreen-island .bar,
+body.fullscreen-island .bar-trigger,
+body.fullscreen-island .music-trigger,
+body.fullscreen-island .task-trigger,
+body.fullscreen-island .music-panel,
+body.fullscreen-island .task-panel,
+body.fullscreen-island .pom-dots,
+body.fullscreen-island .titlebar {
+  display: none !important;
+}
+
+body.fullscreen-island #app {
+  background: transparent !important;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 8px;
+}
+
+body.fullscreen-island .island-clock {
+  display: flex;
+  background: rgba(0,0,0,0.85);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 22px;
+  padding: 8px 18px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.8);
+  font-size: 28px;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+body.fullscreen-island .ic-restore-btn {
+  opacity: 0;
+}
+body.fullscreen-island .island-clock:hover .ic-restore-btn {
+  opacity: 1;
+}

@@ -1,8 +1,8 @@
 {
-  "name": "focusflow",
-  "productName": "FocusFlow",
+  "name": "vibatime",
+  "productName": "VibaTime",
   "version": "1.0.0",
-  "description": "Premium iOS-style StandBy clock with Pomodoro timer, tasks, and SoundCloud music player",
+  "description": "VibaTime — Premium StandBy clock with Pomodoro timer, tasks, and SoundCloud music player",
   "author": "abusn",
   "license": "ISC",
   "main": "main.js",
@@ -15,8 +15,8 @@
     "make-icon": "node make-icon.mjs"
   },
   "build": {
-    "appId": "com.focusflow.app",
-    "productName": "FocusFlow",
+    "appId": "com.vibatime.app",
+    "productName": "VibaTime",
     "copyright": "Copyright © 2025 abusn",
     "asar": true,
     "files": [
@@ -54,7 +54,7 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "FocusFlow"
+      "shortcutName": "VibaTime"
     },
     "directories": {
       "buildResources": "build",

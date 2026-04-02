@@ -85,7 +85,8 @@ const I18N = {
 
 function applyLanguage() {
   const lang = S.menuLang || 'en';
-  document.body.classList.toggle('rtl', lang === 'ar');
+  // لا نغير اتجاه الواجهة — نترجم النصوص فقط بدون RTL
+  // document.body.classList.toggle('rtl', lang === 'ar');
   const dict = I18N[lang] || I18N.en;
 
   document.querySelectorAll('[data-i18n]').forEach(el => {
@@ -137,11 +138,22 @@ const FontManager = {
   },
 
   populateDropdown() {
-    const group = $('sClockFont'); // Target the main select directly now
-    if (!group) return;
-    // We already have the default option in HTML.
-    // If we want to allow other local fonts, we can add them here, 
-    // but the user said "ONLY available", so I'll just clear and keep the main one.
+    const select = $('sClockFont');
+    if (!select) return;
+    // Keep the default option only
+    select.innerHTML = '<option value="PingAR-Lt-Black">PingAR-Lt-Black (Default)</option>';
+    this.customFonts.forEach(font => {
+      // Skip the default font to avoid duplicate
+      if (font.file === 'ping-ar-lt-black.otf') return;
+      const opt = document.createElement('option');
+      opt.value = 'custom:' + font.file;
+      opt.textContent = font.name;
+      select.appendChild(opt);
+    });
+    // Restore saved selection
+    if (S.clockFont && select.querySelector(`option[value="${S.clockFont}"]`)) {
+      select.value = S.clockFont;
+    }
   },
 
   getFontFamily(fontValue) {
@@ -165,7 +177,28 @@ const FontManager = {
 };
 
 function applyClockAppearance() {
-  const familyStr = "'PingAR-Lt-Black', ui-rounded, 'SF Pro Rounded', system-ui, sans-serif";
+  let familyStr;
+
+  if (S.clockFont && S.clockFont.startsWith('custom:')) {
+    // Load and apply custom font from fonts folder
+    const fontInfo = FontManager.getFontFamily(S.clockFont);
+    if (fontInfo) {
+      // Inject @font-face if not already injected
+      let styleEl = document.getElementById('custom-font-face');
+      if (!styleEl) {
+        styleEl = document.createElement('style');
+        styleEl.id = 'custom-font-face';
+        document.head.appendChild(styleEl);
+      }
+      styleEl.textContent = fontInfo.face;
+      familyStr = fontInfo.family;
+    } else {
+      familyStr = "'PingAR-Lt-Black', ui-rounded, 'SF Pro Rounded', system-ui, sans-serif";
+    }
+  } else {
+    familyStr = "'PingAR-Lt-Black', ui-rounded, 'SF Pro Rounded', system-ui, sans-serif";
+  }
+
   document.documentElement.style.setProperty('--clock-font', familyStr);
 
   // Update Separators
@@ -474,6 +507,7 @@ const Counter = {
    8. MODE SWITCH
 ───────────────────────────────────── */
 let mode = 'clock';
+let pomoInitialized = false; // tracks whether Pomodoro has been started at least once
 
 function stopAll() {
   clearInterval(clockTick); clockTick = null;
@@ -508,7 +542,14 @@ function switchMode(m) {
   } else if (m === 'pomodoro') {
     stopAll();
     showSec(true);
-    Pomo.restart();
+    if (!pomoInitialized) {
+      // First time entering Pomodoro — start fresh
+      pomoInitialized = true;
+      Pomo.restart();
+    } else {
+      // Returning to Pomodoro — resume from saved state
+      Pomo._render();
+    }
   } else {
     stopAll();
     showSec(true);
@@ -531,8 +572,13 @@ function playPause() {
 
 function resetTimer() {
   setPlay(false);
-  if (mode === 'pomodoro') Pomo.restart();
-  else if (mode === 'counter') Counter.reset();
+  if (mode === 'pomodoro') {
+    pomoInitialized = false; // allow a fresh restart
+    Pomo.restart();
+    pomoInitialized = true;
+  } else if (mode === 'counter') {
+    Counter.reset();
+  }
 }
 
 /* ─────────────────────────────────────
@@ -555,12 +601,35 @@ document.addEventListener('fullscreenchange', () => {
    DYNAMIC ISLAND
 ───────────────────────────────────── */
 let isIsland = false;
+let isFullscreenIsland = false; // island mode while window is fullscreen
+
 function toggleDynamicIsland(forceState) {
   if (!ipcRenderer) return;
   isIsland = (typeof forceState === 'boolean') ? forceState : !isIsland;
-  document.body.classList.toggle('dynamic-island', isIsland);
-  document.documentElement.classList.toggle('dynamic-island', isIsland);
-  ipcRenderer.send('toggle-dynamic-island', isIsland);
+
+  // Check if window is currently fullscreen
+  const currentlyFullscreen = document.documentElement.classList.contains('is-fullscreen') ||
+    document.body.classList.contains('is-fullscreen');
+
+  if (isIsland && currentlyFullscreen) {
+    // Fullscreen island mode: only change CSS class, don't resize window
+    isFullscreenIsland = true;
+    document.body.classList.add('dynamic-island', 'fullscreen-island');
+    document.documentElement.classList.add('dynamic-island', 'fullscreen-island');
+    // Do NOT send IPC — keep window fullscreen
+  } else if (!isIsland && isFullscreenIsland) {
+    // Exiting fullscreen island mode
+    isFullscreenIsland = false;
+    document.body.classList.remove('dynamic-island', 'fullscreen-island');
+    document.documentElement.classList.remove('dynamic-island', 'fullscreen-island');
+    // Do NOT send IPC — keep window fullscreen
+  } else {
+    // Normal island mode (not fullscreen)
+    isFullscreenIsland = false;
+    document.body.classList.toggle('dynamic-island', isIsland);
+    document.documentElement.classList.toggle('dynamic-island', isIsland);
+    ipcRenderer.send('toggle-dynamic-island', isIsland);
+  }
 }
 
 
@@ -924,7 +993,7 @@ async function getSCClientId() {
       }
     }
   } catch (e) { console.error('SC fetch error', e); }
-  return 'LBCYWmYBCOUCGbkUwnT18OalK8Q12Eow';
+  return 'qNxp6KCjufkNWMIclTv0O4ycYGY0eFFX';
 }
 
 const MusicPlayer = {
@@ -937,12 +1006,38 @@ const MusicPlayer = {
   iframe: null,
   isLooping: false,
   progressInterval: null,
+  likedUrls: new Set(),
 
   init() {
     this.loadTracks();
+    this.loadLikes();
     this.renderList();
     this._bindControls();
     if ($('mlCount')) $('mlCount').textContent = this.tracks.length;
+  },
+
+  loadLikes() {
+    try {
+      const saved = localStorage.getItem('fc_sc_likes');
+      if (saved) {
+        const arr = JSON.parse(saved);
+        this.likedUrls = new Set(arr);
+      }
+    } catch (e) {}
+  },
+
+  saveLikes() {
+    localStorage.setItem('fc_sc_likes', JSON.stringify([...this.likedUrls]));
+  },
+
+  toggleLike(url) {
+    if (this.likedUrls.has(url)) {
+      this.likedUrls.delete(url);
+    } else {
+      this.likedUrls.add(url);
+    }
+    this.saveLikes();
+    this.renderList($('musicSearch') ? $('musicSearch').value : '');
   },
 
   loadTracks() {
@@ -1024,6 +1119,8 @@ const MusicPlayer = {
       const isActive = (!this.showingSearch && i === this.currentIndex) ||
         (this.showingSearch && this.currentIndex >= 0 && this.tracks[this.currentIndex] && this.tracks[this.currentIndex].url === t.url);
 
+      const isLiked = !this.showingSearch && this.likedUrls.has(t.url);
+
       const li = document.createElement('li');
       li.className = `track-item ${isActive ? 'active' : ''}`;
       li.innerHTML = `
@@ -1037,7 +1134,24 @@ const MusicPlayer = {
           <div class="track-artist">${t.artist}</div>
         </div>
         <span class="track-dur">${t.dur || ''}</span>
+        ${!this.showingSearch && t.url ? `<button class="track-like-btn${isLiked ? ' liked' : ''}" title="${isLiked ? 'Unlike' : 'Like'}" data-url="${t.url}">
+          <svg viewBox="0 0 24 24" fill="${isLiked ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+          </svg>
+        </button>` : ''}
       `;
+
+      // Like button click (stop propagation to avoid playing)
+      if (!this.showingSearch && t.url) {
+        const likeBtn = li.querySelector('.track-like-btn');
+        if (likeBtn) {
+          likeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.toggleLike(t.url);
+          });
+        }
+      }
+
       li.addEventListener('click', () => {
         if (this.showingSearch) {
           if (t.url) {
@@ -1461,8 +1575,18 @@ document.addEventListener('DOMContentLoaded', () => {
       document.documentElement.classList.toggle('is-maximized', state === 'maximized');
       document.documentElement.classList.toggle('is-fullscreen', state === 'fullscreen');
       document.body.classList.toggle('is-fullscreen', state === 'fullscreen');
+
       if (state === 'maximized' || state === 'fullscreen') {
-        if (isIsland) toggleDynamicIsland(false);
+        // Exit normal island if entering fullscreen/maximized
+        if (isIsland && !isFullscreenIsland) toggleDynamicIsland(false);
+      } else {
+        // Left fullscreen — if we were in fullscreen-island, clean up
+        if (isFullscreenIsland) {
+          isFullscreenIsland = false;
+          isIsland = false;
+          document.body.classList.remove('dynamic-island', 'fullscreen-island');
+          document.documentElement.classList.remove('dynamic-island', 'fullscreen-island');
+        }
       }
     });
   }
