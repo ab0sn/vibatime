@@ -1,6 +1,6 @@
-# FocusFlow
+# VibaTime
 
-> FocusFlow — a premium iOS-style StandBy clock with Pomodoro timer, tasks, and SoundCloud music player for deep work
+> VibaTime — a premium iOS-style StandBy clock with Pomodoro timer, tasks, and SoundCloud music player for deep work
 
 [![Puppeteer](https://img.shields.io/badge/Puppeteer-latest-blue.svg)](https://pptr.dev/)
 [![Node.js](https://img.shields.io/badge/Node.js-20+-green.svg)](https://nodejs.org/)
@@ -109,7 +109,7 @@
 ```bash
 # Clone the repository
 git clone <repo-url>
-cd focusflow
+cd vibatime
 
 # Install dependencies
 npm install
@@ -129,7 +129,7 @@ npm start
 ## Project Structure
 
 ```
-FocusFlow/
+VibaTime/
 │
 ├── main.js              Electron main process (window creation, IPC)
 ├── index.html           UI markup (all elements in single page)
@@ -201,7 +201,8 @@ Contents:
 
 The default mode — displays a large iOS-style StandBy clock.
 
-
+<!-- Place your screenshot here: Clock mode detail -->
+![Clock Mode Detail](docs/screenshots/clock-detail.png)
 
 Components:
 - Large digital clock (HH:MM or HH:MM:SS)
@@ -218,7 +219,8 @@ Full Pomodoro technique timer:
 - Auto-start next session option
 - Progress dots at the bottom
 
-
+<!-- Place your screenshot here: Pomodoro detail -->
+![Pomodoro Detail](docs/screenshots/pomodoro-detail.png)
 
 ### 3. Counter Mode
 
@@ -227,6 +229,8 @@ Countdown or count up timer:
 - Choose direction (countdown / count up)
 - Audio chime on completion
 
+<!-- Place your screenshot here: Counter detail -->
+![Counter Detail](docs/screenshots/counter-detail.png)
 
 ### 4. Dynamic Island Mode
 
@@ -235,7 +239,8 @@ A mini floating clock bar at the top of the screen:
 - Always on top
 - Double-click to restore full mode
 
-
+<!-- Place your screenshot here: Dynamic Island detail -->
+![Dynamic Island Detail](docs/screenshots/island-detail.png)
 
 ---
 
@@ -284,6 +289,10 @@ A mini floating clock bar at the top of the screen:
 | Numbers color | #e74c3c | Clock digit color |
 | Glow color | #e74c3c | Glow effect around digits |
 | Accent color | #e74c3c | Primary UI color (buttons, progress) |
+
+<!-- Place your screenshot here: Full settings view -->
+![Settings Full](docs/screenshots/settings-full.png)
+
 ---
 
 ## Tasks
@@ -302,6 +311,10 @@ A mini floating clock bar at the top of the screen:
 - Delete: Hover over the task and click the X button
 - Clear completed: Click the trash icon in the panel header
 - Notifications: Automatic alerts at start and end times
+
+<!-- Place your screenshot here: Tasks panel with items -->
+![Tasks with Items](docs/screenshots/tasks-with-items.png)
+
 ---
 
 ## Music Player
@@ -318,6 +331,10 @@ A mini floating clock bar at the top of the screen:
 - Loop: Repeat button (turns accent color when active)
 - Progress bar: Click to seek
 - Volume: Slider at the bottom
+
+<!-- Place your screenshot here: Music player with tracks -->
+![Music Player with Tracks](docs/screenshots/music-tracks.png)
+
 ---
 
 ## Language Support
@@ -375,8 +392,8 @@ Or double-click `run.bat`.
 ```json
 {
   "build": {
-    "appId": "com.focusflow.app",
-    "productName": "FocusFlow",
+    "appId": "com.vibatime.app",
+    "productName": "VibaTime",
     "win": {
       "target": "nsis"
     },
@@ -425,6 +442,29 @@ index.html (App UI)
         ├── RTL Support
         └── Responsive Design
 ```
+
+---
+
+## Screenshot Checklist
+
+Add the following images to `docs/screenshots/`:
+
+| Filename | Description |
+|----------|-------------|
+| `clock-mode.png` | Main screen — Clock mode |
+| `pomodoro.png` | Pomodoro timer during work |
+| `tasks-panel.png` | Tasks panel open |
+| `music-player.png` | Music player open with track list |
+| `settings.png` | Settings window |
+| `dynamic-island.png` | Dynamic Island mode |
+| `counter-setup.png` | Counter setup dialog |
+| `clock-detail.png` | Clock mode close-up |
+| `pomodoro-detail.png` | Pomodoro progress dots |
+| `counter-detail.png` | Counter during countdown |
+| `island-detail.png` | Dynamic Island close-up |
+| `settings-full.png` | Full settings with all sections |
+| `tasks-with-items.png` | Tasks panel with added items |
+| `music-tracks.png` | Music player with tracks |
 
 ---
 

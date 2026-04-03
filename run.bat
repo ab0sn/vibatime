@@ -1,10 +1,10 @@
 @echo off
-title FocusFlow
+title VibaTime
 cd /d "%~dp0"
 
 :: Check if node_modules exists
 if not exist "node_modules\" (
-  echo [FocusFlow] Installing dependencies...
+  echo [VibaTime] Installing dependencies...
   npm install
   if errorlevel 1 (
     echo ERROR: npm install failed. Make sure Node.js is installed.
@@ -13,5 +13,5 @@ if not exist "node_modules\" (
   )
 )
 
-echo [FocusFlow] Starting...
+echo [VibaTime] Starting...
 npm start
