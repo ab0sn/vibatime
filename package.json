@@ -17,7 +17,7 @@
   "build": {
     "appId": "com.vibatime.app",
     "productName": "VibaTime",
-    "copyright": "Copyright © 2025 abusn",
+    "copyright": "Copyright © 2026 abusn",
     "asar": true,
     "files": [
       "**/*",
